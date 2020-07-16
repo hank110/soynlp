@@ -1,6 +1,29 @@
+import argparse
+import os
+
 from tensorflow import one_hot, keras, optimizers
 import tensorflow as tf
 
+
+def read_txt(file_path, labels=False):
+	"""Returns a list object from a text file
+		
+		:param file_path: the path of the input file
+		:type file_path: str
+		:param labels: indicates whether the input_file contains labels (used for type conversion), defaults to False
+		:type labels: boolean
+        
+        :return: list object read from the text file
+        :rtype: list
+	"""
+	list_elem=[]
+	with open(file_path, 'r') as f:
+		for line in f:
+			if labels==True:
+				list_elem.append(int(line.rstrip()))
+			else:
+				list_elem.append(line.rstrip())
+	return list_elem
 
 def load_data(input_data, num_words=None, predict=False, tokenizer=None, max_word_len=0):
 	"""Returns a numpy array of the indexed input data and Python dictionary with tensorflow tokenized information
@@ -145,3 +168,19 @@ def predict_cnn_sent(model, x_test, tokenizer, max_word_len):
 	results=model.predict(x=vector_x, batch_size=1, verbose=1)
 	results=tf.math.argmax(results, axis=-1)
 	return tf.reshape(results, [results.shape[0]])
+
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='CNN model for sentence classification')
+	parser.add_argument('-x', '--train_x', type=str, help='Path for the input corpus')
+	parser.add_argument('-y', '--train_y', type=str, help='Path for the labels')
+	parser.add_argument('-d', '--dim', default=200, type=int, help='Dimensions for the embedding vectors')
+	parser.add_argument('-e', '--epoch', default=10, type=int, help='Number of training epochs')
+	parser.add_argument('-w', '--num_words', default=None, type=int, help='Number of words to be used for training')
+	args = parser.parse_args()
+	print('Parameters:', args, '\n')
+
+	train_x=read_txt(args.train_x)
+	train_y=read_txt(args.train_y, labels=True)
+
+	model, tokenizer, max_sen_length=train_cnn_sent(train_x, train_y, args.dim, args.epoch, args.num_words)
