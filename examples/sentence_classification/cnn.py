@@ -1,5 +1,7 @@
 import argparse
 import os
+import pickle
+import time
 
 from tensorflow import one_hot, keras, optimizers
 import tensorflow as tf
@@ -177,10 +179,22 @@ if __name__ == '__main__':
 	parser.add_argument('-d', '--dim', default=200, type=int, help='Dimensions for the embedding vectors')
 	parser.add_argument('-e', '--epoch', default=10, type=int, help='Number of training epochs')
 	parser.add_argument('-w', '--num_words', default=None, type=int, help='Number of words to be used for training')
+	parser.add_argument('-s', '--save_path', default='./results/', type=str, help='Path to save resulting model, tokenizer and max_sent_length')
 	args = parser.parse_args()
 	print('Parameters:', args, '\n')
 
 	train_x=read_txt(args.train_x)
 	train_y=read_txt(args.train_y, labels=True)
 
-	model, tokenizer, max_sen_length=train_cnn_sent(train_x, train_y, args.dim, args.epoch, args.num_words)
+	if not os.path.exists(args.save_path):
+		os.mkdir(args.save_path)
+
+	model, tokenizer, max_sent_length=train_cnn_sent(train_x, train_y, args.dim, args.epoch, args.num_words)
+
+	timestr = time.strftime("%Y%m%d_%H%M%S")
+	with open(('%s/tokenizer_%s.pickle' %(args.save_path, timestr)), 'wb') as handle:
+		pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+	with open(('%s/max_sent_length_%s.txt' %(args.save_path, timestr)), 'w') as f:
+		f.write(str(max_sent_length))
+
+	keras.models.save_model(model, ('%s/cnn_%s' %(args.save_path, timestr)))
